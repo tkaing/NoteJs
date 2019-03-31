@@ -1,3 +1,5 @@
+var MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/notes-api';
+var JWT_KEY = 'laclemagiquedelamort';
 var express = require('express');
 var md5 = require('md5');
 var jwt = require('jsonwebtoken');
@@ -9,30 +11,48 @@ router.get('/', function(req, res, next) {
   res.render('index', { title: 'le super titre' });
 });
 
+
+
+
 router.post('/signup', async (req, res) => {
   try {
     // Connection URL
-    const url = process.env.MONGODB_URI || 'mongodb://localhost:27017/notes-api';
+
+    var regex = /[A-Z]/;
     // Database Name
     const dbName = 'notes-api';
-    const client = new MongoClient(url);
+    const client = new MongoClient(MONGODB_URI);
     const username = req.body.username;
     const password = req.body.password;
-    await client.connect();
-    const db = client.db(dbName);
-    const col = db.collection('users');
-    col.insertMany([{username: username, password: md5(password)}]);
-    const user = {
-      username: username,
-      password: password
+    if (password.length < 4){
+      res.status(400).send('Le mot de passe doit contenir au moins 4 caractères');
+    } else if (username.match(regex)) {
+      res.status(400).send('Votre identifiant ne doit contenir que des lettres minuscules non accentuées');
+    } else if (username.length < 2 || username.length > 20) {
+      res.status(400).send('Votre identifiant doit contenir entre 2 et 20 caractères');
     }
-    jwt.sign({user}, 'laclemagiquedelamort', (err, token) => {
-      res.json({
-        token
-      });
-    });
-    // res.send("Inscription effectuée");
-    client.close();
+    else {
+        await client.connect();
+        const db = client.db(dbName);
+        const col = db.collection('users');
+        var find = await col.find({username: username}).toArray();
+        if(find[0] != null) {
+          res.status(400).send('Cet identifiant est déjà associé à un compte');
+        }else {
+          col.insertMany([{username: username, password: md5(password)}]);
+          const user = {
+            username: username,
+            password: password
+          }
+          jwt.sign({user}, JWT_KEY, (err, token) => {
+            res.json({
+              token
+            });
+          });
+          // res.send("Inscription effectuée");
+        }
+        client.close();
+    }
   } catch (err) {
     //this will eventually be handled by your error handling middleware
     console.log(err.stack);
@@ -40,34 +60,45 @@ router.post('/signup', async (req, res) => {
 })
 
 
+
+
 router.get('/signin', async (req, res) => {
   try {
     // Connection URL
-    const url = process.env.MONGODB_URI || 'mongodb://localhost:27017/notes-api';
+
+    var regex = /[A-Z]/;
     // Database Name
     const dbName = 'notes-api';
-    const client = new MongoClient(url);
+    const client = new MongoClient(MONGODB_URI);
     const username = req.query.usernameSignIn;
     const password = req.query.passwordSignIn;
-    await client.connect();
-    const db = client.db(dbName);
-    const col = db.collection('users');
-    var find = await col.find({username: username, password: md5(password)}).toArray();
-    // res.send(find);
-    if(find[0] != null) {
-      const user = {
-        username: username,
-        password: password
-      }
-      jwt.sign({user}, 'laclemagiquedelamort', (err, token) => {
-        res.json({
-          token
+    if (password.length < 4){
+      res.status(400).send('Le mot de passe doit contenir au moins 4 caractères');
+    } else if (username.match(regex)) {
+      res.status(400).send('Votre identifiant ne doit contenir que des lettres minuscules non accentuées');
+    } else if (username.length < 2 || username.length > 20) {
+      res.status(400).send('Votre identifiant doit contenir entre 2 et 20 caractères');
+    } else{
+      await client.connect();
+      const db = client.db(dbName);
+      const col = db.collection('users');
+      var find = await col.find({username: username, password: md5(password)}).toArray();
+      // res.send(find);
+      if(find[0] != null) {
+        const user = {
+          username: username,
+          password: password
+        }
+        jwt.sign({user}, JWT_KEY, (err, token) => {
+          res.json({
+            token
+          });
         });
-      });
-    } else {
-      res.sendStatus(403);
+      } else {
+        res.status(403).send('Cet identifiant est inconnu');
+      }
+      client.close();
     }
-    client.close();
   } catch (err) {
     //this will eventually be handled by your error handling middleware
     console.log(err.stack);
@@ -75,7 +106,7 @@ router.get('/signin', async (req, res) => {
 })
 
 router.post('/token', verifyToken, (req, res) => {
-  jwt.verify(req.token, 'laclemagiquedelamort', (err, authData) => {
+  jwt.verify(req.token, JWT_KEY, (err, authData) => {
     if(err) {
       res.sendStatus(403);
     } else {
@@ -89,18 +120,18 @@ router.post('/token', verifyToken, (req, res) => {
 
 
 
-//POUR TITI
+//POUR TITI 
 // router.get('/signin', verifyToken, async (req, res) => {
-//   jwt.verify(req.token, 'laclemagiquedelamort', async (err, authData) => {
+//   jwt.verify(req.token, JWT_KEY, async (err, authData) => {
 //     if(err) {
 //       res.sendStatus(403);
 //     } else {
 //       try {
 //         // Connection URL
-//         const url = process.env.MONGODB_URI || 'mongodb://localhost:27017/notes-api';
+//
 //         // Database Name
 //         const dbName = 'notes-api';
-//         const client = new MongoClient(url);
+//         const client = new MongoClient(MONGODB_URI);
 //         const username = req.query.usernameSignIn;
 //         const password = req.query.passwordSignIn;
 //         await client.connect();
@@ -148,10 +179,10 @@ function verifyToken(req, res, next) {
 router.get('/test', async (req, res) => {
   try {
     // Connection URL
-    const url = process.env.MONGODB_URI || 'mongodb://localhost:27017/notes-api';
+
     // Database Name
     const dbName = 'notes-api';
-    const client = new MongoClient(url);
+    const client = new MongoClient(MONGODB_URI);
 
     await client.connect();
     const db = client.db(dbName);
@@ -168,10 +199,10 @@ router.get('/test', async (req, res) => {
 router.get('/show', async (req, res) => {
   try {
     // Connection URL
-    const url = process.env.MONGODB_URI || 'mongodb://localhost:27017/notes-api';
+
     // Database Name
     const dbName = 'notes-api';
-    const client = new MongoClient(url);
+    const client = new MongoClient(MONGODB_URI);
 
     await client.connect();
     const db = client.db(dbName);
