@@ -7,5 +7,29 @@
   <body>
     <h1>{{ title }}</h1>
     <p>Welcome to {{ title }}</p>
+
+    <form action="/signup" method="post">
+      <h2>Create account</h2>
+      <br>
+      <label>Insert username : </label>
+      <input type="text" name="username" autocomplete="off">
+      <br>
+      <label>Insert password : </label>
+      <input type="password" name="password">
+      <input type="submit" value="Ok">
+    </form>
+
+    <br>
+    <form action="/signin" method="get">
+      <h2>Sign in</h2>
+      <br>
+      <label>Insert username : </label>
+      <input type="text" name="usernameSignIn" autocomplete="off">
+      <br>
+      <label>Insert password : </label>
+      <input type="password" name="passwordSignIn">
+      <input type="submit" value="Ok">
+    </form>
+
   </body>
 </html>
