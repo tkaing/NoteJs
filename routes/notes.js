@@ -1,4 +1,5 @@
 var MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017';
+var JWT_KEY = process.env.JWT_KEY || 'laclemagiquedelamort';
 var MONGODB_DBNAME = 'notes-api';
 var MONGODB_COLLEC = 'notes';
 
@@ -6,58 +7,66 @@ var { check, validationResult } = require('express-validator/check');
 var MongoClient = require('mongodb').MongoClient;
 var ObjectId = require('mongodb').ObjectId;
 var express = require('express');
-
+var jwt = require('jsonwebtoken');
+// var verifyToken = require('./index').verifyToken;
 var router = express.Router();
+
 
 /**
  * @PUT | CREATE Note
- * 
+ *
  * @Route("/notes")
  */
-router.post('/', [
-
+router.put('/', [verifyToken,
 	check('content')
 		.isLength({ min: 1 })
 		.withMessage('Une note ne peut pas être vide')
 		// .isEmail()
 		// .withMessage('La note ne respecte pas le format')
 
-], async function(request, response) {
+], function(request, response) {
+	jwt.verify(request.token, JWT_KEY, async (err, authData) => {
+		if (err) {
+			response.status(401).send('Utilisateur non connecté');
+		} else {
+				var note = request.body;
+				var errors = validationResult(request).mapped();
+				var success = Object.keys(errors).length === 0;
 
-	var note = request.body;
-	var errors = validationResult(request).mapped();
-	var success = Object.keys(errors).length === 0;
+				if (success) {
 
-	if (success) {
+					try {
+						// Connect to MongoDB
+						const client = new MongoClient(MONGODB_URI);
+						await client.connect();
 
-		try {
-			// Connect to MongoDB
-			const client = new MongoClient(MONGODB_URI);
-			await client.connect();
+						// Move to database and collection
+						const dbi = client.db(MONGODB_DBNAME);
+						const col = dbi.collection(MONGODB_COLLEC);
 
-			// Move to database and collection
-			const dbi = client.db(MONGODB_DBNAME);
-			const col = dbi.collection(MONGODB_COLLEC);
+						note['userId'] = authData.user.getUser[0]._id;
+						note['createdAt'] = Date.now();
+						note['lastUpdatedAt'] = null;
 
-			// Insert Note
-			await col.insertOne(note);
+						// Insert Note
+						await col.insertOne(note);
 
-			// Close Connection
-			client.close();
+						// Close Connection
+						client.close();
 
-		} catch (e) {
-			// This will eventually be handled 
-			// ... by your error handling middleware
-			response.status(500);
-			response.json(e.stack);
-		}
-	}
-
-	response.status(200);
-	response.json({
-		data: note,
-		errors: errors,
-		success: success
+					} catch (e) {
+						// This will eventually be handled
+						// ... by your error handling middleware
+						response.status(500);
+						response.json(e.stack);
+					}
+				}
+				response.status(200);
+				response.json({
+					error: errors,
+					data: note
+				});
+			}
 	});
 });
 
@@ -66,34 +75,45 @@ router.post('/', [
  *
  * @Route("/notes")
  */
-router.get('/', [], async function(request, response) {
+router.get('/', verifyToken, function(request, response) {
+	jwt.verify(request.token, JWT_KEY, async (err, authData) => {
+		if (err) {
+			response.status(401).send('Utilisateur non connecté');
+		} else {
+			var notes = [];
 
-	var notes = [];
+			try {
+				// Connect to MongoDB
+				const client = new MongoClient(MONGODB_URI);
+				await client.connect();
 
-	try {
-		// Connect to MongoDB
-		const client = new MongoClient(MONGODB_URI);
-		await client.connect();
+				// Move to database and collection
+				const dbi = client.db(MONGODB_DBNAME);
+				const col = dbi.collection(MONGODB_COLLEC);
 
-		// Move to database and collection
-		const dbi = client.db(MONGODB_DBNAME);
-		const col = dbi.collection(MONGODB_COLLEC);
+				// Find All Note
+				//var getUser = await col.find({username: username, password: md5(password)}).toArray();
+				notes = await col.find({userId: authData.user.getUser[0]._id}).sort({_id: -1}).toArray();
+				console.log(verifyToken);
 
-		// Find All Note
-		notes = await col.find().toArray();
+				// Close Connection
+				client.close();
 
-		// Close Connection
-		client.close();
-
-	} catch (e) {
-		// This will eventually be handled 
-		// ... by your error handling middleware
-		response.status(500);
-		response.json(e.stack);
-	}
-
-	response.render('notes/show', {
-		notes: notes
+			} catch (e) {
+				// This will eventually be handled
+				// ... by your error handling middleware
+				response.status(500);
+				response.json(e.stack);
+			}
+			response.json({
+				"error": err,
+				"notes": notes,
+				authData
+			});
+			// response.render('notes/show', {
+			// 	notes: notes
+			// });
+		}
 	});
 });
 
@@ -102,7 +122,7 @@ router.get('/', [], async function(request, response) {
  *
  * @Route("/notes/:id")
  */
-router.patch('/:id', [
+router.patch('/:id', [verifyToken,
 
 	check('content')
 		.isLength({ min: 1 })
@@ -110,50 +130,56 @@ router.patch('/:id', [
 		// .isEmail()
 		// .withMessage('La note ne respecte pas le format')
 
-], async function(request, response) {
+], function(request, response) {
+	jwt.verify(request.token, JWT_KEY, async (err, authData) => {
+		if (err) {
+			response.status(401).send('Utilisateur non connecté');
+		} else {
+			var id = request.params.id;
+			var note = request.body;
+			var errors = validationResult(request).mapped();
+			var success = Object.keys(errors).length === 0;
 
-	var id = request.params.id;
-	var note = request.body;
-	var errors = validationResult(request).mapped();
-	var success = Object.keys(errors).length === 0;
+			if (success) {
 
-	if (success) {
+				try {
+					// Connect to MongoDB
+					const client = new MongoClient(MONGODB_URI);
+					await client.connect();
 
-		try {
-			// Connect to MongoDB
-			const client = new MongoClient(MONGODB_URI);
-			await client.connect();
+					// Move to database and collection
+					const dbi = client.db(MONGODB_DBNAME);
+					const col = dbi.collection(MONGODB_COLLEC);
 
-			// Move to database and collection
-			const dbi = client.db(MONGODB_DBNAME);
-			const col = dbi.collection(MONGODB_COLLEC);
+					// Update Note
+					var result = await col.updateOne(
+						{ _id: ObjectId(id) },
+						{ $set: { 	content: note.content,
+												lastUpdatedAt: Date.now()
+										} }
+					);
+					if (result.modifiedCount === 0) {
+						response.status(404);
+						response.json("Votre note est introuvable.");
+					}
 
-			// Update Note
-			var result = await col.updateOne(
-				{ _id: ObjectId(id) },
-				{ $set: { content: note.content } }
-			);
-			if (result.modifiedCount === 0) {
-				response.status(404);
-				response.json("Votre note est introuvable.");
+					// Close Connection
+					client.close();
+
+				} catch (e) {
+					// This will eventually be handled
+					// ... by your error handling middleware
+					response.status(500);
+					response.json(e.stack);
+				}
 			}
 
-			// Close Connection
-			client.close();
-
-		} catch (e) {
-			// This will eventually be handled 
-			// ... by your error handling middleware
-			response.status(500);
-			response.json(e.stack);
+			response.status(200);
+			response.json({
+				data: note,
+				error: errors
+			});
 		}
-	}
-
-	response.status(200);
-	response.json({
-		data: note,
-		errors: errors,
-		success: success
 	});
 });
 
@@ -162,38 +188,70 @@ router.patch('/:id', [
  *
  * @Route("/notes/:id")
  */
-router.delete('/:id', async function(request, response) {
+router.delete('/:id', verifyToken, function(request, response) {
+	jwt.verify(request.token, JWT_KEY, async (err, authData) => {
+		if (err) {
+			response.status(401).send('Utilisateur non connecté');
+		} else {
+				var id = request.params.id;
 
-	var id = request.params.id;
+				try {
+					// Connect to MongoDB
+					const client = new MongoClient(MONGODB_URI);
+					await client.connect();
 
-	try {
-		// Connect to MongoDB
-		const client = new MongoClient(MONGODB_URI);
-		await client.connect();
+					// Move to database and collection
+					const dbi = client.db(MONGODB_DBNAME);
+					const col = dbi.collection(MONGODB_COLLEC);
 
-		// Move to database and collection
-		const dbi = client.db(MONGODB_DBNAME);
-		const col = dbi.collection(MONGODB_COLLEC);
+					// Delete Note
+					var result = await col.deleteOne({ _id: ObjectId(id) });
+					if (result.deletedCount === 0) {
+						response.status(404);
+						response.json("Votre note est introuvable.");
+					}
 
-		// Delete Note
-		var result = await col.deleteOne({ _id: ObjectId(id) });
-		if (result.deletedCount === 0) {
-			response.status(404);
-			response.json("Votre note est introuvable.");
+					// Close Connection
+					client.close();
+
+				} catch (e) {
+					// This will eventually be handled
+					// ... by your error handling middleware
+					response.status(500);
+					response.json(e.stack);
+				}
+
+				response.status(200);
+				response.json({
+					error: errors
+				});
 		}
-
-		// Close Connection
-		client.close();
-
-	} catch (e) {
-		// This will eventually be handled 
-		// ... by your error handling middleware
-		response.status(500);
-		response.json(e.stack);
-	}
-
-	response.status(200);
-	response.json("Une note a été supprimé !");
+	});
 });
+
+
+
+// FORMAT OF TOKEN
+// Authorization: Bearer <access_token>
+
+// Verify Token
+function verifyToken(req, res, next) {
+  // Get auth header value
+  const bearerHeader = req.headers['authorization'];
+  // Check if bearer is undefined
+  if(typeof bearerHeader !== 'undefined') {
+    // Split at the space
+    const bearer = bearerHeader.split(' ');
+    // Get token from array
+    const bearerToken = bearer[1];
+    // Set the token
+    req.token = bearerToken;
+    // Next middleware
+    next();
+  } else {
+    // Forbidden
+    res.sendStatus(403);
+  }
+}
 
 module.exports = router;
