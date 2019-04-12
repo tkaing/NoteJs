@@ -1,5 +1,5 @@
 var MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/notes-api';
-var JWT_KEY = 'laclemagiquedelamort';
+var JWT_KEY = process.env.JWT_KEY || 'laclemagiquedelamort';
 var express = require('express');
 var md5 = require('md5');
 var jwt = require('jsonwebtoken');
@@ -18,7 +18,7 @@ router.post('/signup', async (req, res) => {
   try {
     // Connection URL
 
-    var regex = /[A-Z]/;
+    var regex = /[A-Z0-9]/;
     // Database Name
     const dbName = 'notes-api';
     const client = new MongoClient(MONGODB_URI);
@@ -39,12 +39,12 @@ router.post('/signup', async (req, res) => {
         if(find[0] != null) {
           res.status(400).send('Cet identifiant est déjà associé à un compte');
         }else {
-          col.insertMany([{username: username, password: md5(password)}]);
+          await col.insertMany([{username: username, password: md5(password)}]);
+          var getUser = await col.find({username: username, password: md5(password)}).toArray();
           const user = {
-            username: username,
-            password: password
+            getUser
           }
-          jwt.sign({user}, JWT_KEY, (err, token) => {
+          jwt.sign({user}, JWT_KEY, {expiresIn: '1d'} ,(err, token) => {
             res.json({
               token
             });
@@ -66,7 +66,7 @@ router.get('/signin', async (req, res) => {
   try {
     // Connection URL
 
-    var regex = /[A-Z]/;
+    var regex = /[A-Z0-9]/;
     // Database Name
     const dbName = 'notes-api';
     const client = new MongoClient(MONGODB_URI);
@@ -82,14 +82,13 @@ router.get('/signin', async (req, res) => {
       await client.connect();
       const db = client.db(dbName);
       const col = db.collection('users');
-      var find = await col.find({username: username, password: md5(password)}).toArray();
+      var getUser = await col.find({username: username, password: md5(password)}).toArray();
       // res.send(find);
       if(find[0] != null) {
         const user = {
-          username: username,
-          password: password
+          getUser
         }
-        jwt.sign({user}, JWT_KEY, (err, token) => {
+        jwt.sign({user}, JWT_KEY, {expiresIn: '1d'} ,(err, token) => {
           res.json({
             token
           });
@@ -119,40 +118,6 @@ router.post('/token', verifyToken, (req, res) => {
 });
 
 
-
-//POUR TITI 
-// router.get('/signin', verifyToken, async (req, res) => {
-//   jwt.verify(req.token, JWT_KEY, async (err, authData) => {
-//     if(err) {
-//       res.sendStatus(403);
-//     } else {
-//       try {
-//         // Connection URL
-//
-//         // Database Name
-//         const dbName = 'notes-api';
-//         const client = new MongoClient(MONGODB_URI);
-//         const username = req.query.usernameSignIn;
-//         const password = req.query.passwordSignIn;
-//         await client.connect();
-//         const db = client.db(dbName);
-//         const col = db.collection('users');
-//         var find = await col.find({username: username, password: md5(password)}).toArray();
-//         // res.send(find);
-//         if(find[0] != null) {
-//           res.send("t'existe ma gueule");
-//         } else {
-//           res.sendStatus(403);
-//         }
-//         client.close();
-//       } catch (err) {
-//         //this will eventually be handled by your error handling middleware
-//         console.log(err.stack);
-//       }
-//     }
-//   });
-// })
-
 // FORMAT OF TOKEN
 // Authorization: Bearer <access_token>
 
@@ -176,26 +141,6 @@ function verifyToken(req, res, next) {
   }
 }
 
-router.get('/test', async (req, res) => {
-  try {
-    // Connection URL
-
-    // Database Name
-    const dbName = 'notes-api';
-    const client = new MongoClient(MONGODB_URI);
-
-    await client.connect();
-    const db = client.db(dbName);
-    const col = db.collection('users');
-    col.insertMany([{nom: 'monNom', prenom: 'monPrenom', email: 'monEmail', mdp: 'monMdp', tel: 'monTel'}]);
-    res.send(col.find().toArray());
-    client.close();
-  } catch (err) {
-    //this will eventually be handled by your error handling middleware
-    console.log(err.stack);
-  }
-});
-
 router.get('/show', async (req, res) => {
   try {
     // Connection URL
@@ -209,6 +154,7 @@ router.get('/show', async (req, res) => {
     const col = db.collection('users');
     var find = await col.find().toArray();
     console.log(find);
+    console.log(__dirname);
     res.send(find);
     client.close();
   } catch (err) {
@@ -216,6 +162,5 @@ router.get('/show', async (req, res) => {
     console.log(err.stack);
   }
 });
-
 
 module.exports = router;
