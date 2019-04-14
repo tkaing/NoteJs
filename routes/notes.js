@@ -8,7 +8,6 @@ var MongoClient = require('mongodb').MongoClient;
 var ObjectId = require('mongodb').ObjectId;
 var express = require('express');
 var jwt = require('jsonwebtoken');
-// var verifyToken = require('./index').verifyToken;
 var router = express.Router();
 
 
@@ -94,7 +93,6 @@ router.get('/', verifyToken, function(request, response) {
 				// Find All Note
 				//var getUser = await col.find({username: username, password: md5(password)}).toArray();
 				notes = await col.find({userId: authData.user.getUser[0]._id}).sort({_id: -1}).toArray();
-				console.log(verifyToken);
 
 				// Close Connection
 				client.close();
@@ -106,9 +104,8 @@ router.get('/', verifyToken, function(request, response) {
 				response.json(e.stack);
 			}
 			response.json({
-				"error": err,
-				"notes": notes,
-				authData
+				error: err,
+				notes: notes
 			});
 			// response.render('notes/show', {
 			// 	notes: notes
@@ -176,8 +173,9 @@ router.patch('/:id', [verifyToken,
 
 			response.status(200);
 			response.json({
-				data: note,
-				error: errors
+				error: errors,
+				data: note
+
 			});
 		}
 	});
@@ -208,7 +206,9 @@ router.delete('/:id', verifyToken, function(request, response) {
 					var result = await col.deleteOne({ _id: ObjectId(id) });
 					if (result.deletedCount === 0) {
 						response.status(404);
-						response.json("Votre note est introuvable.");
+						response.json({
+								error: "Votre note est introuvable."
+						});
 					}
 
 					// Close Connection
