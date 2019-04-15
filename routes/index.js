@@ -21,7 +21,7 @@ router.get('/', function(req, res, next) {
  */
 router.post('/signup', async (req, res) => {
   try {
-    var regex = /[A-Z0-9]/;
+    var regex = /[^a-z]/;
     const dbName = MONGODB_DBNAME;
     const client = new MongoClient(MONGODB_URI);
     const username = req.body.username;
@@ -70,7 +70,7 @@ router.post('/signup', async (req, res) => {
 router.post('/signin', async (req, res) => {
   try {
 
-    var regex = /[A-Z0-9]/;
+    var regex = /[^a-z]/;
     const dbName = MONGODB_DBNAME;
     const client = new MongoClient(MONGODB_URI);
     const username = req.body.username;
