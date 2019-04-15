@@ -3,7 +3,6 @@ var MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017';
 var MONGODB_DBNAME = 'notes-api';
 var MONGODB_COLLEC = 'notes';
 
-var { check, validationResult } = require('express-validator/check');
 var MongoClient = require('mongodb').MongoClient;
 var ObjectId = require('mongodb').ObjectId;
 var express = require('express');
