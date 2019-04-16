@@ -24,7 +24,7 @@ Ce travail a été effectuer en groupe (Herael et tkaing).
 
 ## Déploiement
 
-L'API constitue 4 routes :
+L'API constitue 6 routes :
 
 - <u>POST /signup</u>
 
