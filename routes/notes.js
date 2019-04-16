@@ -17,7 +17,7 @@ var router = express.Router();
  */
 router.put('/', verifyToken, function(request, response) {
 	jwt.verify(request.token, JWT_KEY, async (err, authData) => {
-		if (err) 
+		if (err)
 		{
 			response.status(401).send({
 				error: 'Utilisateur non connecté.'
@@ -30,30 +30,38 @@ router.put('/', verifyToken, function(request, response) {
 				var note = request.body;
 
 				// Check note content
-				if (note.content.length <= 0) 
+				if (note.content.length <= 0)
 				{
 					response.json({
 						error: 'Une note ne peut pas être vide.'
 					});
+
+				} else {
+
+						// Connect to MongoDB
+					const client = new MongoClient(MONGODB_URI);
+					await client.connect();
+
+					// Move to database and collection
+					const dbi = client.db(MONGODB_DBNAME);
+					const col = dbi.collection(MONGODB_COLLEC);
+
+					note['userId'] = authData.user.getUser[0]._id;
+					note['createdAt'] = Date.now();
+					note['lastUpdatedAt'] = null;
+
+					// Insert Note
+					await col.insertOne(note);
+
+					response.status(200);
+					response.json({
+						error: null,
+						data: note
+					});
+
+					// Close Connection
+					client.close();
 				}
-
-				// Connect to MongoDB
-				const client = new MongoClient(MONGODB_URI);
-				await client.connect();
-
-				// Move to database and collection
-				const dbi = client.db(MONGODB_DBNAME);
-				const col = dbi.collection(MONGODB_COLLEC);
-
-				note['userId'] = authData.user.getUser[0]._id;
-				note['createdAt'] = Date.now();
-				note['lastUpdatedAt'] = null;
-
-				// Insert Note
-				await col.insertOne(note);
-
-				// Close Connection
-				client.close();
 
 			} catch (e) {
 				// This will eventually be handled
@@ -61,12 +69,6 @@ router.put('/', verifyToken, function(request, response) {
 				response.status(500);
 				response.json(e.stack);
 			}
-
-			response.status(200);
-			response.json({
-				error: null,
-				data: note
-			});
 		}
 	});
 });
@@ -78,14 +80,14 @@ router.put('/', verifyToken, function(request, response) {
  */
 router.get('/', verifyToken, function(request, response) {
 	jwt.verify(request.token, JWT_KEY, async (err, authData) => {
-		if (err) 
+		if (err)
 		{
 			response.status(401).send({
 				error: 'Utilisateur non connecté.'
 			});
 
 		} else {
-			
+
 			var notes = [];
 
 			try {
@@ -124,7 +126,7 @@ router.get('/', verifyToken, function(request, response) {
  */
 router.patch('/:id', verifyToken, function(request, response) {
 	jwt.verify(request.token, JWT_KEY, async (err, authData) => {
-		if (err) 
+		if (err)
 		{
 			response.status(401).send({
 				error: 'Utilisateur non connecté.'
@@ -138,7 +140,7 @@ router.patch('/:id', verifyToken, function(request, response) {
 				var note = request.body;
 
 				// Check note content
-				if (note.content.length <= 0) 
+				if (note.content.length <= 0)
 				{
 					response.json({
 						error: 'Une note ne peut pas être vide.'
@@ -156,11 +158,11 @@ router.patch('/:id', verifyToken, function(request, response) {
 				// Update Note
 				var tmpNote = await col.find({ _id: ObjectId(id) }).toArray();
 
-				if (tmpNote[0] != null) 
+				if (tmpNote[0] != null)
 				{
 					tmpNote = await col.find({ _id: ObjectId(id), userId: authData.user.getUser[0]._id }).toArray();
 
-					if (tmpNote[0] != null) 
+					if (tmpNote[0] != null)
 					{
 						var result = await col.updateOne({ _id: ObjectId(id) },
 						{ $set: { content: note.content, lastUpdatedAt: Date.now() } });
@@ -206,7 +208,7 @@ router.patch('/:id', verifyToken, function(request, response) {
  */
 router.delete('/:id', verifyToken, function(request, response) {
 	jwt.verify(request.token, JWT_KEY, async (err, authData) => {
-		if (err) 
+		if (err)
 		{
 			response.status(401).send({
 				error: 'Utilisateur non connecté.'
@@ -229,11 +231,11 @@ router.delete('/:id', verifyToken, function(request, response) {
 				// Delete Note
 				var tmpNote = await col.find({ _id: ObjectId(id) }).toArray();
 
-				if (tmpNote[0] != null) 
+				if (tmpNote[0] != null)
 				{
 					tmpNote = await col.find({ _id: ObjectId(id), userId: authData.user.getUser[0]._id }).toArray();
 
-					if (tmpNote[0] != null) 
+					if (tmpNote[0] != null)
 					{
 						var result = await col.deleteOne({ _id: ObjectId(id) });
 
