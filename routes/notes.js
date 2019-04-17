@@ -46,8 +46,17 @@ router.put('/', verifyToken, function(request, response) {
 					const dbi = client.db(MONGODB_DBNAME);
 					const col = dbi.collection(MONGODB_COLLEC);
 
+					var options = {
+					    timeZone: "Europe/Paris",
+					    year: 'numeric', month: 'numeric', day: 'numeric',
+					    hour: 'numeric', minute: 'numeric', second: 'numeric'
+					};
+					var formatter = new Intl.DateTimeFormat([], options);
+					var currentTime = formatter.format(new Date());
+					var now = currentTime;
+
 					note['userId'] = authData.user.getUser[0]._id;
-					note['createdAt'] = Date.now();
+					note['createdAt'] = now;
 					note['lastUpdatedAt'] = null;
 
 					// Insert Note
@@ -164,8 +173,17 @@ router.patch('/:id', verifyToken, function(request, response) {
 
 					if (tmpNote[0] != null)
 					{
+						var options = {
+						    timeZone: "Europe/Paris",
+						    year: 'numeric', month: 'numeric', day: 'numeric',
+						    hour: 'numeric', minute: 'numeric', second: 'numeric'
+						};
+						var formatter = new Intl.DateTimeFormat([], options);
+						var currentTime = formatter.format(new Date());
+						var updateNow = currentTime;
+
 						var result = await col.updateOne({ _id: ObjectId(id) },
-						{ $set: { content: note.content, lastUpdatedAt: Date.now() } });
+						{ $set: { content: note.content, lastUpdatedAt: updateNow } });
 
 						var finalNote = await col.find({ _id: ObjectId(id) }).toArray();
 
