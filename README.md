@@ -10,6 +10,8 @@ L'objectif de ce projet est d'écrire et de mettre en production une API HTTP de
 
 Ce travail a été effectuer en groupe (Herael et tkaing).
 
+Application : [PostMan](<https://www.getpostman.com/>)
+
 ## Installation
 
 - Pour clone le repo git :
@@ -20,7 +22,7 @@ Ce travail a été effectuer en groupe (Herael et tkaing).
 
   ```npm start```
 
-- Pour tester l'API, veuillez installer [PostMan](<https://www.getpostman.com/>).
+- Pour tester l'API, veuillez installer [PostMan](<https://agile-ridge-63323.herokuapp.com/>).
 
 ## Déploiement
 
