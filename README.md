@@ -10,7 +10,7 @@ L'objectif de ce projet est d'écrire et de mettre en production une API HTTP de
 
 Ce travail a été effectuer en groupe (Herael et tkaing).
 
-Application : [PostMan](<https://www.getpostman.com/>)
+Application : [API HTTP de gestion de notes personnelles](<https://www.getpostman.com/>)
 
 ## Installation
 
