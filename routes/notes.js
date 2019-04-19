@@ -53,10 +53,9 @@ router.put('/', verifyToken, function(request, response) {
 					};
 					var formatter = new Intl.DateTimeFormat([], options);
 					var currentTime = formatter.format(new Date());
-					var now = currentTime;
 
 					note['userId'] = authData.user.getUser[0]._id;
-					note['createdAt'] = now;
+					note['createdAt'] = currentTime;
 					note['lastUpdatedAt'] = null;
 
 					// Insert Note
@@ -180,10 +179,9 @@ router.patch('/:id', verifyToken, function(request, response) {
 						};
 						var formatter = new Intl.DateTimeFormat([], options);
 						var currentTime = formatter.format(new Date());
-						var updateNow = currentTime;
 
 						var result = await col.updateOne({ _id: ObjectId(id) },
-						{ $set: { content: note.content, lastUpdatedAt: updateNow } });
+						{ $set: { content: note.content, lastUpdatedAt: currentTime } });
 
 						var finalNote = await col.find({ _id: ObjectId(id) }).toArray();
 
