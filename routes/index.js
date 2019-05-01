@@ -23,7 +23,7 @@ router.post('/signup', async (req, res) => {
   try {
     var regex = /[^a-z]/;
     const dbName = MONGODB_DBNAME;
-    const client = new MongoClient(MONGODB_URI);
+    const client = new MongoClient(MONGODB_URI, { useNewUrlParser: true });
     const username = req.body.username;
     const password = req.body.password;
     if (password.length < 4){
@@ -72,7 +72,7 @@ router.post('/signin', async (req, res) => {
 
     var regex = /[^a-z]/;
     const dbName = MONGODB_DBNAME;
-    const client = new MongoClient(MONGODB_URI);
+    const client = new MongoClient(MONGODB_URI, { useNewUrlParser: true });
     const username = req.body.username;
     const password = req.body.password;
     if (password.length < 4){
@@ -110,7 +110,7 @@ router.post('/signin', async (req, res) => {
 router.get('/show', async (req, res) => {
   try {
     const dbName = MONGODB_DBNAME;
-    const client = new MongoClient(MONGODB_URI);
+    const client = new MongoClient(MONGODB_URI, { useNewUrlParser: true });
 
     await client.connect();
     const db = client.db(dbName);
