@@ -287,7 +287,7 @@ router.delete('/:id', verifyToken, function(request, response) {
 // Verify Token
 function verifyToken(req, res, next) {
   // Get auth header value
-  const bearerHeader = req.headers['authorization'];
+  const bearerHeader = req.headers['x-access-token'];
   // Check if bearer is undefined
   if(typeof bearerHeader !== 'undefined') {
     // Split at the space
