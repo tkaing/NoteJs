@@ -61,8 +61,7 @@ router.put('/', verifyToken, function(request, response) {
 					// Insert Note
 					await col.insertOne(note);
 
-					response.status(200);
-					response.json({
+					response.status(200).json({
 						error: null,
 						data: note
 					});
@@ -74,8 +73,7 @@ router.put('/', verifyToken, function(request, response) {
 			} catch (e) {
 				// This will eventually be handled
 				// ... by your error handling middleware
-				response.status(500);
-				response.json(e.stack);
+				response.status(500).json(e.stack);
 			}
 		}
 	});
@@ -116,8 +114,7 @@ router.get('/', verifyToken, function(request, response) {
 			} catch (e) {
 				// This will eventually be handled
 				// ... by your error handling middleware
-				response.status(500);
-				response.json(e.stack);
+				response.status(500).json(e.stack);
 			}
 			response.json({
 				error: err,
@@ -210,8 +207,7 @@ router.patch('/:id', verifyToken, function(request, response) {
 			} catch (e) {
 				// This will eventually be handled
 				// ... by your error handling middleware
-				response.status(500);
-				response.json(e.stack);
+				response.status(500).json(e.stack);
 			}
 		}
 	});
@@ -279,8 +275,7 @@ router.delete('/:id', verifyToken, function(request, response) {
 			} catch (e) {
 				// This will eventually be handled
 				// ... by your error handling middleware
-				response.status(500);
-				response.json(e.stack);
+				response.status(500).json(e.stack);
 			}
 		}
 	});
